@@ -11,12 +11,12 @@ import java.util.List;
  * https://github.com/DrA1ex/JS_ParticleSystem
  * https://physics.stackexchange.com/questions/317239/initializing-positions-of-n-body-simulations/317230#317230
  */
-public class NBodySimulation extends Canvas {
+public class NBodySimulation extends JPanel {
 
     public static final int WIDTH_OF_SPACE = 1000;
     private static final double G = 6.6743e-11;
-    private static final int MAX_MASS = 100000;
-    private static final double DELTA_TIME = 0.5;
+    private static final int MAX_MASS = 10_000_000;
+    private static final double DELTA_TIME = 0.1;
 
     private final List<Body> bodies = new ArrayList<>();
     private Quadrant root;
@@ -38,7 +38,7 @@ public class NBodySimulation extends Canvas {
             root.calculateVirtualBodies();
             calculatePosition();
             //System.out.println(i++);
-            if (i == 100) {
+            if (i == 5) {
                 repaint();
                 i=0;
             }
@@ -52,7 +52,7 @@ public class NBodySimulation extends Canvas {
     private void generateBodies() {
         for (int i=0; i<bodyCount; i++) {
             Coordinate centerOfMass = new Coordinate(Math.random() * WIDTH_OF_SPACE, Math.random() * WIDTH_OF_SPACE);
-            Coordinate velocity = new Coordinate((Math.random()-0.5)/100, (Math.random()-0.5)/100);
+            Coordinate velocity = new Coordinate((Math.random()-0.5)/60, (Math.random()-0.5)/60);
             int mass = (int) (Math.random() * MAX_MASS);
             bodies.add(new Body(centerOfMass, new Coordinate(0, 0), mass));
         }
@@ -90,33 +90,37 @@ public class NBodySimulation extends Canvas {
 
             // calculate new center of mass: r(n+1) = r(n) + v(n)*delta_t
             b.center.x += vel.x * DELTA_TIME;
+            if (b.center.x<0) b.center.x = WIDTH_OF_SPACE + b.center.x;
+            if (b.center.x>WIDTH_OF_SPACE) b.center.x = b.center.x - WIDTH_OF_SPACE;
             b.center.y += vel.y * DELTA_TIME;
+            if (b.center.y<0) b.center.y = WIDTH_OF_SPACE + b.center.y;
+            if (b.center.y>WIDTH_OF_SPACE) b.center.y = b.center.y - WIDTH_OF_SPACE;
 
             // calculate new velocity: v(n+1) = v(n) + a(n)*delta_t
             vel.add(acc.mul(DELTA_TIME));
         }
     }
 
-    public void paint(Graphics g) {
+    public void paintComponent(Graphics g) {
+        g.clearRect(0,0, WIDTH_OF_SPACE, WIDTH_OF_SPACE);
         for (Body b : bodies) {
-            int size = (int) b.mass / 4000;
-            //g.fillOval((int)b.center.x, (int)b.center.y, size, size);
-            g.drawOval((int)b.center.x, (int)b.center.y, size, size);
+            int size = (int) b.mass / 400_000;
+            g.fillOval((int)b.center.x, (int)b.center.y, size, size);
+            // g.drawOval((int)b.center.x, (int)b.center.y, size, size);
         }
     }
 
     public static void main(String[] args) {
         JFrame frame = new JFrame("N-Body Simulation");
-        NBodySimulation canvas = new NBodySimulation(20);
-        canvas.setSize(WIDTH_OF_SPACE, WIDTH_OF_SPACE);
-        frame.add(canvas);
-        frame.pack();
+        NBodySimulation panel = new NBodySimulation(50);
+        frame.add(panel);
+        frame.setSize(WIDTH_OF_SPACE, WIDTH_OF_SPACE);
         frame.addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent e) {
                 System.exit(0);
             }
         });
         frame.setVisible(true);
-        canvas.calculate();
+        panel.calculate();
     }
 }
