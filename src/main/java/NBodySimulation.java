@@ -9,24 +9,24 @@ import java.util.List;
  * See
  * http://arborjs.org/docs/barnes-hut
  * https://github.com/DrA1ex/JS_ParticleSystem
+ * https://physics.stackexchange.com/questions/317239/initializing-positions-of-n-body-simulations/317230#317230
  */
 public class NBodySimulation extends Canvas {
 
     public static final int WIDTH_OF_SPACE = 1000;
-
     private static final double G = 6.6743e-11;
     private static final int MAX_MASS = 100000;
+    private static final double DELTA_TIME = 0.5;
 
     private final List<Body> bodies = new ArrayList<>();
-    private List<Coordinate> forces = new ArrayList<>();;
     private Quadrant root;
     private int bodyCount = 100;
-    private float theta = 0.2F;
+    private float theta = 0.1F;
 
     public NBodySimulation(int bodyCount) {
         this.bodyCount = bodyCount;
         generateBodies();
-        generateForces();
+        // initDynamicData();
     }
 
     public void calculate() {
@@ -36,8 +36,7 @@ public class NBodySimulation extends Canvas {
             constructTree();
             root.removeUnusedSubquadrants();
             root.calculateVirtualBodies();
-            calculateForces();
-            adjustBodyCoordinates();
+            calculatePosition();
             //System.out.println(i++);
             if (i == 100) {
                 repaint();
@@ -51,33 +50,24 @@ public class NBodySimulation extends Canvas {
      * Generate bodies
      */
     private void generateBodies() {
-        // int m = 0;
         for (int i=0; i<bodyCount; i++) {
-            double x = Math.random() * WIDTH_OF_SPACE;
-            double y = Math.random() * WIDTH_OF_SPACE;
+            Coordinate centerOfMass = new Coordinate(Math.random() * WIDTH_OF_SPACE, Math.random() * WIDTH_OF_SPACE);
+            Coordinate velocity = new Coordinate((Math.random()-0.5)/100, (Math.random()-0.5)/100);
             int mass = (int) (Math.random() * MAX_MASS);
-            // m += mass;
-            bodies.add(new Body(new Coordinate(x, y), mass));
+            bodies.add(new Body(centerOfMass, new Coordinate(0, 0), mass));
         }
-        // System.out.println("Gesamtmasse : " + m);
     }
-/**
+
+    /*
     private void generateBodies() {
-        // int m = 0;
         for (int x=10; x<WIDTH_OF_SPACE; x+=40) {
             for (int y=10; y<WIDTH_OF_SPACE; y+=40) {
-                //int mass = (int) (Math.random() * MAX_MASS);
-                bodies.add(new Body(new Coordinate(x, y), (x==490 && y==490)?MAX_MASS:MAX_MASS));
+                Coordinate velocity = new Coordinate(0, 0);
+                int mass = (int) (Math.random() * MAX_MASS);
+                bodies.add(new Body(new Coordinate(x, y), velocity, mass));
             }
         }
-        // System.out.println("Gesamtmasse : " + m);
     }*/
-
-    private void generateForces() {
-        for (int i=0; i<bodies.size(); i++) {
-            forces.add(new Coordinate(0.0, 0.0));
-        }
-    }
 
     /**
      * Construct tree with bodies
@@ -91,34 +81,33 @@ public class NBodySimulation extends Canvas {
         }
     }
 
-    private void calculateForces() {
-        for (int i=0; i<bodies.size(); i++) {
-            Coordinate f = root.calculateForce(theta, bodies.get(i));
-            f.x *= -G;
-            f.y *= -G;
-            Coordinate fOld = forces.get(i);
-            fOld.x /= 2;
-            fOld.y /= 2;
-            fOld.add(f);
-        }
-    }
+    private void calculatePosition() {
+        for (Body b : bodies) {
+            Coordinate acc = root.calculateForce(theta, b);
+            acc.x *= -G;
+            acc.y *= -G;
+            Coordinate vel = b.velocity;
 
-    private void adjustBodyCoordinates() {
-        for (int i=0; i<bodies.size(); i++) {
-            bodies.get(i).centerOfMass.add(forces.get(i));
+            // calculate new center of mass: r(n+1) = r(n) + v(n)*delta_t
+            b.center.x += vel.x * DELTA_TIME;
+            b.center.y += vel.y * DELTA_TIME;
+
+            // calculate new velocity: v(n+1) = v(n) + a(n)*delta_t
+            vel.add(acc.mul(DELTA_TIME));
         }
     }
 
     public void paint(Graphics g) {
         for (Body b : bodies) {
             int size = (int) b.mass / 4000;
-            g.fillOval((int)b.centerOfMass.x, (int)b.centerOfMass.y, size, size);
+            //g.fillOval((int)b.center.x, (int)b.center.y, size, size);
+            g.drawOval((int)b.center.x, (int)b.center.y, size, size);
         }
     }
 
     public static void main(String[] args) {
         JFrame frame = new JFrame("N-Body Simulation");
-        NBodySimulation canvas = new NBodySimulation(200);
+        NBodySimulation canvas = new NBodySimulation(20);
         canvas.setSize(WIDTH_OF_SPACE, WIDTH_OF_SPACE);
         frame.add(canvas);
         frame.pack();

@@ -15,8 +15,8 @@ public class Quadrant {
     }
 
     public void addBody(Body b) {
-        double b_x = b.centerOfMass.x;
-        double b_y = b.centerOfMass.y;
+        double b_x = b.center.x;
+        double b_y = b.center.y;
         if (!(coordinate.x <= b_x && coordinate.x+width > b_x &&
                 coordinate.y <= b_y && coordinate.y+width > b_y)) {
             // b is not in this quadrant
@@ -79,25 +79,27 @@ public class Quadrant {
             for (Quadrant q : subQuadrants) {
                 Body b = q.calculateVirtualBodies();
                 m += b.mass;
-                x += b.centerOfMass.x * b.mass;
-                y += b.centerOfMass.y * b.mass;
+                x += b.center.x * b.mass;
+                y += b.center.y * b.mass;
             }
             x /= m;
             y /= m;
-            body = new Body(new Coordinate(x, y), m);
+            body = new Body(new Coordinate(x, y), new Coordinate(0,0), m);
         }
         return body;
     }
 
     public Coordinate calculateForce(float theta, Body b) {
-        Coordinate vec = b.centerOfMass.diff(body.centerOfMass);
+        Coordinate vec = b.center.diff(body.center);
         double vecLength = Math.sqrt(vec.x*vec.x + vec.y*vec.y);
         if ((isSingleBodyQuadrant && !b.equals(body))
             || (((double) width) / vecLength) < theta) {
             // real body or b is far away
+            vec.x /= vecLength;
+            vec.y /= vecLength;
             double vecLength2 = vecLength * vecLength;
-            vec.x = vec.x / vecLength2 * body.mass*b.mass;
-            vec.y = vec.y / vecLength2 * body.mass*b.mass;
+            vec.x = vec.x / vecLength2 * body.mass;
+            vec.y = vec.y / vecLength2 * body.mass;
         } else {
             vec = new Coordinate(0, 0);
             for (Quadrant q : subQuadrants) {
