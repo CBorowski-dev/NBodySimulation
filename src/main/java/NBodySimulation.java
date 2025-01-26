@@ -21,23 +21,39 @@ public class NBodySimulation extends JPanel {
     private final List<Body> bodies = new ArrayList<>();
     private Quadrant root;
     private int bodyCount = 100;
-    private float theta = 0.1F;
+    private float theta = 0.7F;
 
+    private int coreCount;
+    private int bodiesPerCore;
+
+    /**
+     *
+     * @param bodyCount
+     */
     public NBodySimulation(int bodyCount) {
         this.bodyCount = bodyCount;
         generateBodies();
-        // initDynamicData();
+        coreCount = Runtime.getRuntime().availableProcessors();
+        bodiesPerCore = bodyCount / coreCount;
     }
 
+    /**
+     *
+     */
     public void calculate() {
         int i=0;
         do {
-            root = null;
+            root = new Quadrant(new Coordinate(0, 0), WIDTH_OF_SPACE);
             constructTree();
             root.removeUnusedSubquadrants();
             root.calculateVirtualBodies();
             calculatePosition();
-            //System.out.println(i++);
+            /*for (int x=0; x<coreCount; x++) {
+                int x_final = x;
+                Thread.startVirtualThread(() -> {
+                    calculatePosition(x_final * bodiesPerCore, bodiesPerCore);
+                });
+            }*/
             if (i == 5) {
                 repaint();
                 i=0;
@@ -54,7 +70,7 @@ public class NBodySimulation extends JPanel {
             Coordinate centerOfMass = new Coordinate(Math.random() * WIDTH_OF_SPACE, Math.random() * WIDTH_OF_SPACE);
             Coordinate velocity = new Coordinate((Math.random()-0.5)/60, (Math.random()-0.5)/60);
             int mass = (int) (Math.random() * MAX_MASS);
-            bodies.add(new Body(centerOfMass, new Coordinate(0, 0), mass));
+            bodies.add(new Body(centerOfMass, velocity, mass));
         }
     }
 
@@ -73,14 +89,12 @@ public class NBodySimulation extends JPanel {
      * Construct tree with bodies
      */
     private void constructTree() {
-        for (Body b : bodies) {
-            if (root == null) {
-                root = new Quadrant(new Coordinate(0, 0), WIDTH_OF_SPACE);
-            }
-            root.addBody(b);
-        }
+        for (Body b : bodies) root.addBody(b);
     }
 
+    /**
+     *
+     */
     private void calculatePosition() {
         for (Body b : bodies) {
             Coordinate acc = root.calculateForce(theta, b);
@@ -101,18 +115,26 @@ public class NBodySimulation extends JPanel {
         }
     }
 
+    /**
+     *
+     * @param g
+     */
     public void paintComponent(Graphics g) {
         g.clearRect(0,0, WIDTH_OF_SPACE, WIDTH_OF_SPACE);
         for (Body b : bodies) {
-            int size = (int) b.mass / 400_000;
+            int size = (int) b.mass / 800_000;
             g.fillOval((int)b.center.x, (int)b.center.y, size, size);
             // g.drawOval((int)b.center.x, (int)b.center.y, size, size);
         }
     }
 
+    /**
+     *
+     * @param args
+     */
     public static void main(String[] args) {
         JFrame frame = new JFrame("N-Body Simulation");
-        NBodySimulation panel = new NBodySimulation(50);
+        NBodySimulation panel = new NBodySimulation(128);
         frame.add(panel);
         frame.setSize(WIDTH_OF_SPACE, WIDTH_OF_SPACE);
         frame.addWindowListener(new WindowAdapter() {
