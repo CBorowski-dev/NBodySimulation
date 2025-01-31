@@ -17,14 +17,16 @@ public class NBodySimulation extends JPanel {
     private static final double G = 6.6743e-11;
     private static final int MAX_MASS = 10_000_000;
     private static final double DELTA_TIME = 0.1;
+    private static final float THETA = 0.8F;
 
     private final List<Body> bodies = new ArrayList<>();
     private Quadrant root;
     private int bodyCount = 100;
-    private float theta = 0.7F;
 
     private int coreCount;
     private int bodiesPerCore;
+
+    private boolean[] threadSync;
 
     /**
      *
@@ -35,6 +37,7 @@ public class NBodySimulation extends JPanel {
         generateBodies();
         coreCount = Runtime.getRuntime().availableProcessors();
         bodiesPerCore = bodyCount / coreCount;
+        threadSync = new boolean[coreCount];
     }
 
     /**
@@ -47,13 +50,25 @@ public class NBodySimulation extends JPanel {
             constructTree();
             root.removeUnusedSubquadrants();
             root.calculateVirtualBodies();
-            calculatePosition();
-            /*for (int x=0; x<coreCount; x++) {
+            // calculatePosition();
+            for (int x=0; x<coreCount; x++) {
                 int x_final = x;
+                threadSync[x_final] = false;
                 Thread.startVirtualThread(() -> {
                     calculatePosition(x_final * bodiesPerCore, bodiesPerCore);
+                    threadSync[x_final] = true;
                 });
-            }*/
+            }
+            boolean wait;
+            do {
+                wait = false;
+                for (int j=0; j<threadSync.length; j++) {
+                    if (!threadSync[j]) {
+                        wait = true;
+                        break;
+                    }
+                }
+            } while (wait);
             if (i == 5) {
                 repaint();
                 i=0;
@@ -95,9 +110,11 @@ public class NBodySimulation extends JPanel {
     /**
      *
      */
-    private void calculatePosition() {
-        for (Body b : bodies) {
-            Coordinate acc = root.calculateForce(theta, b);
+    private void calculatePosition(int start, int length) {
+        //for (Body b : bodies) {
+        for (int t=start; t<start+length; t++) {
+            Body b = bodies.get(t);
+            Coordinate acc = root.calculateForce(THETA, b);
             acc.x *= -G;
             acc.y *= -G;
             Coordinate vel = b.velocity;
@@ -134,7 +151,7 @@ public class NBodySimulation extends JPanel {
      */
     public static void main(String[] args) {
         JFrame frame = new JFrame("N-Body Simulation");
-        NBodySimulation panel = new NBodySimulation(128);
+        NBodySimulation panel = new NBodySimulation(256);
         frame.add(panel);
         frame.setSize(WIDTH_OF_SPACE, WIDTH_OF_SPACE);
         frame.addWindowListener(new WindowAdapter() {
