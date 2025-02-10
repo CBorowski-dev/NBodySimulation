@@ -84,13 +84,13 @@ public class Quadrant {
             }
             x /= m;
             y /= m;
-            body = new Body(new Coordinate(x, y), new Coordinate(0,0), m);
+            body = new Body(new Coordinate(x, y), new Vector(0,0), m);
         }
         return body;
     }
 
-    public Coordinate calculateForce(float theta, Body b) {
-        Coordinate vec = b.center.diff(body.center);
+    public Vector calculateForce(float theta, Body b) {
+        Vector vec = b.center.diff(body.center);
         double vecLength = Math.sqrt(vec.x*vec.x + vec.y*vec.y);
         if ((isSingleBodyQuadrant && !b.equals(body))
             || (((double) width) / vecLength) < theta) {
@@ -101,7 +101,7 @@ public class Quadrant {
             vec.x = vec.x / vecLength2 * body.mass;
             vec.y = vec.y / vecLength2 * body.mass;
         } else {
-            vec = new Coordinate(0, 0);
+            vec = new Vector(0, 0);
             for (Quadrant q : subQuadrants) {
                 vec.add(q.calculateForce(theta, b));
             }

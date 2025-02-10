@@ -13,11 +13,12 @@ import java.util.List;
  */
 public class NBodySimulation extends JPanel {
 
+    public static final int BODY_COUNT = 1024;
     public static final int WIDTH_OF_SPACE = 1000;
     private static final double G = 6.6743e-11;
     private static final int MAX_MASS = 10_000_000;
     private static final double DELTA_TIME = 0.1;
-    private static final float THETA = 0.8F;
+    private static final float THETA = 0.3F;
 
     private final List<Body> bodies = new ArrayList<>();
     private Quadrant root;
@@ -83,7 +84,7 @@ public class NBodySimulation extends JPanel {
     private void generateBodies() {
         for (int i=0; i<bodyCount; i++) {
             Coordinate centerOfMass = new Coordinate(Math.random() * WIDTH_OF_SPACE, Math.random() * WIDTH_OF_SPACE);
-            Coordinate velocity = new Coordinate((Math.random()-0.5)/60, (Math.random()-0.5)/60);
+            Vector velocity = new Vector((Math.random()-0.5)/60, (Math.random()-0.5)/60);
             int mass = (int) (Math.random() * MAX_MASS);
             bodies.add(new Body(centerOfMass, velocity, mass));
         }
@@ -114,10 +115,10 @@ public class NBodySimulation extends JPanel {
         //for (Body b : bodies) {
         for (int t=start; t<start+length; t++) {
             Body b = bodies.get(t);
-            Coordinate acc = root.calculateForce(THETA, b);
+            Vector acc = root.calculateForce(THETA, b);
             acc.x *= -G;
             acc.y *= -G;
-            Coordinate vel = b.velocity;
+            Vector vel = b.velocity;
 
             // calculate new center of mass: r(n+1) = r(n) + v(n)*delta_t
             b.center.x += vel.x * DELTA_TIME;
@@ -151,7 +152,7 @@ public class NBodySimulation extends JPanel {
      */
     public static void main(String[] args) {
         JFrame frame = new JFrame("N-Body Simulation");
-        NBodySimulation panel = new NBodySimulation(256);
+        NBodySimulation panel = new NBodySimulation(BODY_COUNT);
         frame.add(panel);
         frame.setSize(WIDTH_OF_SPACE, WIDTH_OF_SPACE);
         frame.addWindowListener(new WindowAdapter() {

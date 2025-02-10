@@ -2,10 +2,10 @@ import java.util.Objects;
 
 public class Body {
     Coordinate center; // center of mass
-    Coordinate velocity;
+    Vector velocity;
     int mass;
 
-    public Body(Coordinate c, Coordinate v, int mass) {
+    public Body(Coordinate c, Vector v, int mass) {
         this.center = c;
         this.velocity = v;
         this.mass = mass;
