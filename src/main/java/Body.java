@@ -15,11 +15,11 @@ public class Body {
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         Body body = (Body) o;
-        return Float.compare(mass, body.mass) == 0 && Objects.equals(center, body.center);
+        return mass == body.mass && Objects.equals(center, body.center) && Objects.equals(velocity, body.velocity);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(center, mass);
+        return Objects.hash(center, velocity, mass);
     }
 }
